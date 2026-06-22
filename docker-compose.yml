@@ -1,0 +1,65 @@
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootsecret}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-revenue_db}
+      MYSQL_USER: ${MYSQL_USER:-revenue}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-revenue_secret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "${MYSQL_HOST_PORT:-18432}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootsecret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_REVERB_APP_KEY: local-reverb-key
+        VITE_REVERB_HOST: localhost
+        VITE_REVERB_PORT: "18430"
+        VITE_REVERB_SCHEME: http
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      APP_KEY: ${APP_KEY:-base64:ZzO5Os6576o3leOOSSOEtxgTCv+7ddXCTSSMxkBdWKA=}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${MYSQL_DATABASE:-revenue_db}
+      DB_USERNAME: ${MYSQL_USER:-revenue}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-revenue_secret}
+      SEED_RANDOM: ${SEED_RANDOM:-42}
+      LOCATIONS_FEED_DAILY_STAGGER_MS: ${LOCATIONS_FEED_DAILY_STAGGER_MS:-3000}
+      LOCATIONS_FEED_INVALID_RESUBMIT_RATE: ${LOCATIONS_FEED_INVALID_RESUBMIT_RATE:-0.1}
+      BROADCAST_CONNECTION: reverb
+      REVERB_APP_ID: ${REVERB_APP_ID:-local}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-local-reverb-key}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-reverb-secret}
+      REVERB_HOST: 127.0.0.1
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
+      REVERB_SERVER_HOST: 0.0.0.0
+      REVERB_SERVER_PORT: 8080
+    ports:
+      - "${API_HOST_PORT:-18430}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health?ready=1 && pgrep -f 'artisan schedule:work' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 180s
+
+volumes:
+  mysql_data:

@@ -1,0 +1,55 @@
+---
+description: Revenue Reconciliation System — project facts for agents
+alwaysApply: true
+---
+
+# Revenue Reconciliation System
+
+## Stack
+
+- **API:** Laravel 12 (`backend/`), PHP 8.3, MySQL 8
+- **UI:** Vue 3 (`packages/web/`), built into Laravel `public/` for production
+- **Locations feed:** Each persisted location submits via HTTP (`LocationsFeedApiClient`, `x-source: LOC-xxx`); no in-process import bypass
+- **Deploy:** Single Docker image `backend/Dockerfile`; production at [https://luckylincoln.xyz/](https://luckylincoln.xyz/) on Railway (see `deploy/railway/DEPLOY.md`)
+
+## Local Docker
+
+```bash
+./start.sh   # http://localhost:18430
+docker compose down -v   # full reset
+```
+
+Services: `mysql`, `app` (API + Vue + `schedule:work` + bootstrap locations-feed).
+
+## Architecture
+
+1. **Seed** (`reference_data.sql` in migration) — locations, machines, game_types, expected_totals; **no** revenue/submissions
+2. **Locations feed** (`locations-feed:run`) — loads locations from API, POSTs per location to `/api/revenue/import`
+3. **Import** — envelope for `LOC-*` sources; canonical `location_daily_files`; audit `import_batches`
+4. **Schedule** — daily 00:00 UTC + resubmit every 15m (`routes/console.php`); bootstrap `--daily` on container start
+
+## Key paths
+
+| Area | Path |
+|------|------|
+| Import / idempotency | `backend/app/Services/ImportService.php` |
+| Location source gate | `backend/app/Support/LocationSource.php` |
+| Locations feed | `backend/app/Console/Commands/LocationsFeedCommand.php`, `backend/app/Services/LocationsFeedApiClient.php` |
+| Config | `backend/config/locations-feed.php` |
+| Diagrams | `backend/app/Services/DiagramService.php` |
+| Entrypoint | `backend/docker/entrypoint.sh` |
+| API routes | `backend/routes/api.php` |
+| Vue UI | `packages/web/` |
+
+## Env
+
+- Docker: `LOCATIONS_FEED_DAILY_STAGGER_MS`, `LOCATIONS_FEED_INVALID_RESUBMIT_RATE`, `SEED_RANDOM`
+- Docker DB: `DB_HOST=mysql`, `DB_DATABASE=revenue_db`
+- Railway: MySQL → Connect app; app vars in `deploy/railway/DEPLOY.md` (no `FEEDER_*`, no manual `PORT`)
+- Vue dev proxy: `VITE_API_PROXY=http://localhost:18430` when API runs in Docker
+
+## Do not
+
+- Reintroduce Node.js backend workers or `feeder:*` naming
+- Seed revenue records or import via `ImportService` from the seeder/locations-feed command (HTTP only)
+- Commit `backend/.env` (excluded from Docker via `.dockerignore`)

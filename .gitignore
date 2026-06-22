@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+mysql_data/
+.DS_Store
+*.log
+.vite/
+coverage/
+*.tsbuildinfo
+packages/web/src/**/*.js

@@ -1,0 +1,10 @@
+---
+description: Plans must be terse — inherits global concise-plans rule
+alwaysApply: true
+---
+
+# Concise plans
+
+Global rule: `~/.cursor/rules/concise-plans.mdc` (always applies).
+
+Project planning requests follow the same hard limits: ≤10 bullets, no diagrams, no recap.

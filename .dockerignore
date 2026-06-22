@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+packages/web/node_modules
+backend/.env
+backend/.env.backup
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+!backend/storage/**/.gitignore

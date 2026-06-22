@@ -1,0 +1,25 @@
+---
+description: Work fully autonomously — run commands yourself; never ask the user to run things
+alwaysApply: true
+---
+
+# Autonomous Execution
+
+Work fully autonomously. Do not delegate execution to the user.
+
+## Do
+
+- Run builds, tests, Docker, git, installs, and debugging commands yourself
+- If a step fails, diagnose and retry with alternatives before reporting a blocker
+- Verify changes end-to-end when feasible (start services, hit endpoints, read logs)
+- Only stop for input when a decision is genuinely the user's (credentials, destructive ops they must approve, ambiguous product choices)
+
+## Don't
+
+- Ask the user to "run X", "try Y", or "check Z in your terminal"
+- End with open-ended "you can run..." instructions instead of running them
+- Give up after a single command failure without investigating further
+
+## When blocked
+
+If something truly cannot be done in this environment (e.g. missing secret only the user holds), state the specific blocker and what you already tried — not a generic handoff.
